@@ -1,0 +1,8 @@
+.env
+.venv/
+__pycache__/
+*.pyc
+facturas.json
+*.pdf
+probar_storage.py
+probar_tabla.py
