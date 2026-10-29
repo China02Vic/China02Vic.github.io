@@ -1,14 +1,23 @@
 
 import os
 import uuid
+import streamlit as st
 from datetime import datetime, timezone
 from dotenv import load_dotenv
 from azure.storage.blob import BlobServiceClient
 from azure.data.tables import TableServiceClient
 
+
 load_dotenv()
 
 CONNECTION_STRING = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
+
+if not CONNECTION_STRING:
+    try:
+        CONNECTION_STRING = st.secrets["AZURE_STORAGE_CONNECTION_STRING"]
+    except (KeyError, FileNotFoundError):
+        CONNECTION_STRING = None
+
 CONTENEDOR = os.getenv("AZURE_STORAGE_CONTAINER", "factura1")
 TABLA = "Facturas"
 
