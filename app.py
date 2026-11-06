@@ -6,6 +6,7 @@ import streamlit as st
 import tempfile
 import os
 from extractor import extraer_factura
+from foundry_agent import consultar_agente
 
 
 # ==========================================
@@ -26,19 +27,16 @@ st.set_page_config(
 
 st.markdown("""
 <style>
-    /* Fondo general */
     .stApp {
         background-color: #F4F7FB;
     }
 
-    /* Área principal */
     .block-container {
         max-width: 1150px;
         padding-top: 2rem;
         padding-bottom: 3rem;
     }
 
-    /* Encabezado */
     .encabezado {
         background: linear-gradient(135deg, #102A43, #174A70);
         padding: 30px;
@@ -60,19 +58,16 @@ st.markdown("""
         margin-bottom: 0;
     }
 
-    /* Tarjetas de secciones */
     div[data-testid="stVerticalBlockBorderWrapper"] {
         background-color: white;
         border-radius: 14px;
         border-color: #DCE5EE;
     }
 
-    /* Títulos */
     h2, h3 {
         color: #163A59 !important;
     }
 
-    /* Botones */
     .stButton > button,
     .stFormSubmitButton > button {
         background-color: #174A70;
@@ -92,25 +87,21 @@ st.markdown("""
         border: 1px solid #27AE60;
     }
 
-    /* Campos de texto */
     .stTextInput input {
         border-radius: 7px;
         border-color: #CBD5E1;
         background-color: white;
     }
 
-    /* Cargador de archivos */
     [data-testid="stFileUploader"] {
         background-color: #F8FAFC;
         border-radius: 10px;
     }
 
-    /* Separadores */
     hr {
         border-color: #DCE5EE;
     }
 
-    /* Pie de página */
     .pie-pagina {
         text-align: center;
         color: #64748B;
@@ -148,6 +139,9 @@ if "resultado_aprobacion" not in st.session_state:
 
 if "revision_confirmada" not in st.session_state:
     st.session_state["revision_confirmada"] = False
+
+if "analisis_agente" not in st.session_state:
+    st.session_state["analisis_agente"] = None
 
 
 # ==========================================
@@ -206,6 +200,7 @@ with st.container(border=True):
                 st.session_state["archivo_contenido"] = contenido
                 st.session_state["resultado_aprobacion"] = None
                 st.session_state["revision_confirmada"] = False
+                st.session_state["analisis_agente"] = None
 
                 st.session_state.pop(
                     "datos_corregidos",
@@ -354,13 +349,17 @@ if st.session_state["datos_factura"] is not None:
                     "resultado_aprobacion"
                 ] = None
 
+                st.session_state[
+                    "analisis_agente"
+                ] = None
+
                 st.success(
                     "Revisión guardada correctamente."
                 )
 
 
 # ==========================================
-# SECCIÓN 3: APROBACIÓN
+# SECCIÓN 3: ASISTENTE INTELIGENTE
 # ==========================================
 
 if st.session_state.get("revision_confirmada", False):
@@ -369,7 +368,74 @@ if st.session_state.get("revision_confirmada", False):
 
     with st.container(border=True):
 
-        st.subheader("✅ 3. Aprobación de factura")
+        st.subheader("🤖 3. Asistente inteligente de Río Claro")
+
+        st.write(
+            "Consulta al agente de Microsoft Foundry para obtener "
+            "una segunda revisión de los datos de la factura."
+        )
+
+        if st.button(
+            "🤖 Consultar asistente inteligente",
+            key="consultar_agente"
+        ):
+
+            factura = st.session_state["datos_corregidos"]
+
+            mensaje = f"""
+Analiza la siguiente información de una factura comercial:
+
+Proveedor: {factura['proveedor']}
+Fecha: {factura['fecha']}
+Folio: {factura['folio']}
+Subtotal: {factura['subtotal']}
+Impuestos: {factura['impuestos']}
+Total: {factura['total']}
+
+Revisa la coherencia de los importes.
+Identifica posibles inconsistencias o datos faltantes.
+Explica tus observaciones en español.
+No inventes información.
+Recuerda que la aprobación final corresponde a una persona.
+"""
+
+            try:
+
+                with st.spinner(
+                    "El asistente está analizando la factura..."
+                ):
+
+                    respuesta = consultar_agente(mensaje)
+
+                st.session_state["analisis_agente"] = respuesta
+
+            except Exception as error:
+
+                st.error(
+                    f"No se pudo consultar al asistente: "
+                    f"{type(error).__name__}: {error}"
+                )
+
+        if st.session_state.get("analisis_agente"):
+
+            st.markdown("#### Resultado del asistente")
+
+            st.markdown(
+                st.session_state["analisis_agente"]
+            )
+
+
+# ==========================================
+# SECCIÓN 4: APROBACIÓN
+# ==========================================
+
+if st.session_state.get("revision_confirmada", False):
+
+    st.write("")
+
+    with st.container(border=True):
+
+        st.subheader("✅ 4. Aprobación de factura")
 
         st.write(
             "Ingresa el nombre de la persona responsable "
